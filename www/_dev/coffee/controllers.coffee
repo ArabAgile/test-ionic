@@ -1,72 +1,60 @@
-app = angular.module 'starter.controllers', []
+angular.module 'starter.controllers', []
 
-app.controller 'AppCtrl', ($scope, $ionicModal, $timeout) ->
-  $scope.data = '';
-  return
+  .controller 'AppCtrl', ['$scope', 'localStorage', 'AGHelper', ($scope, localStorage, AGHelper) ->
+    # AGHelper.alert('Welcome!');
 
-app.controller 'PlaylistsCtrl', ($scope) ->
-  $scope.playlists = [
-    {
-      title: 'Teggew'
-      id: 1
-    }
-    {
-      title: 'Ammar'
-      id: 2
-    }
+    return
   ]
-  return
+
+  .controller 'TeamsCtrl', ['$scope', 'localStorage', 'Fifa', ($scope, localStorage, Fifa) ->
+
+    teams = localStorage.getObject('teams')
+
+    if teams.length?
+      # Get from local cached data
+      # console.log 'LOCAL'
+      $scope.teams = teams
+
+    else
+      # Query teams form API
+      # console.log 'REMOTE'
+      Fifa.get {}, (teams) -> 
+        # Save to local db
+        localStorage.setObject('teams', teams.data)
+        $scope.teams = teams.data
+
+    return
+  ]
 
 
+  .controller 'TeamCtrl', ['$scope', 'Teams', '$stateParams', ($scope, Teams, $stateParams) ->
+    teams = Teams.all()
+    $scope.id = $stateParams.teamId
 
-###
+    for team in teams
+      if team.c_TeamNatioShort == $scope.id
+        $scope.team = team;
+        break
 
-angular.module('starter.controllers', [])
+    return
+  ]
 
-.controller('AppCtrl', function($scope, $ionicModal, $timeout) {
-  // Form data for the login modal
-  $scope.loginData = {};
 
-  // Create the login modal that we will use later
-  $ionicModal.fromTemplateUrl('templates/login.html', {
-    scope: $scope
-  }).then(function(modal) {
-    $scope.modal = modal;
-  });
+  .controller 'EditTeamCtrl', ['$scope', 'Teams', 'localStorage', '$stateParams', '$location', ($scope, Teams, localStorage, $stateParams, $location) ->
+    teams = Teams.all()
+    $scope.id = $stateParams.teamId
 
-  // Triggered in the login modal to close it
-  $scope.closeLogin = function() {
-    $scope.modal.hide();
-  },
+    for team, i in teams
+      if team.c_TeamNatioShort == $scope.id
+        $scope.team = team;
+        $scope.index = i;
+        break
 
-  // Open the login modal
-  $scope.login = function() {
-    $scope.modal.show();
-  };
-
-  // Perform the login action when the user submits the login form
-  $scope.doLogin = function() {
-    console.log('Doing login', $scope.loginData);
-
-    // Simulate a login delay. Remove this and replace with your login
-    // code if using a login system
-    $timeout(function() {
-      $scope.closeLogin();
-    }, 1000);
-  };
-})
-
-.controller('PlaylistsCtrl', function($scope) {
-  $scope.playlists = [
-    { title: 'Reggae', id: 1 },
-    { title: 'Chill', id: 2 },
-    { title: 'Dubstep', id: 3 },
-    { title: 'Indie', id: 4 },
-    { title: 'Rap', id: 5 },
-    { title: 'Cowbell', id: 6 }
-  ];
-})
-
-.controller('PlaylistCtrl', function($scope, $stateParams) {
-})
-###
+    $scope.edit = () ->
+      teams[$scope.index].c_Team_en = $scope.team.c_Team_en
+      localStorage.setObject 'teams', teams
+      $location.path '/app/teams/' + $scope.id
+      return
+      
+    return
+  ]

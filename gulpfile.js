@@ -7,22 +7,32 @@ var gulp = require('gulp'),
     minifyCss = require('gulp-minify-css'),
     rename = require('gulp-rename'),
     coffee = require('gulp-coffee'),
+    browserify = require('gulp-browserify'),
+    // jquery = require('gulp-jquery'),
+    // compass = require('gulp-compass'),
+    // gulpif = require('gulp-if'),
     jade = require('gulp-jade'),
+    stylus = require('gulp-stylus'),
     livereload = require('gulp-livereload'),
     lr = require('tiny-lr'),
     server = lr(),
-    sh = require('shelljs');
+    sh = require('shelljs'),
+    env;
+
+
+env = process.env.NODE_ENV || 'development';
 
 var sourcePaths = {
   sass: ['scss/**/*.scss'],
+  stylus: ['www/_dev/stylus/*.styl'],
   coffee: ['www/_dev/coffee/*.coffee'],
   html: ['*.html', '**/*.html'],
+  js: ['www/_dev/js/*.js'],
   jade: ['*.jade']
 };
 
 gulp.task('sass', function(done) {
   gulp.src('scss/ionic.app.scss')
-    .pipe(sass())
     .pipe(gulp.dest('www/css/'))
     .pipe(minifyCss({
       keepSpecialComments: 0
@@ -32,15 +42,39 @@ gulp.task('sass', function(done) {
     .on('end', done);
 });
 
-gulp.task('js', function() {
-  // 
-});
+// gulp.task('compass', function() {
+//   gulp.src(sourcePaths.sass)
+//     .pipe(compass({
+//       sass: 'path/to/sass',
+//       image: 'path/to/images',
+//       style: 'expanded'
+//     }))
+//     .on('error', gutil.log)
+//     .pipe(gulp.dest('www/css/'));
+// });
 
 gulp.task('coffee', function() {
   gulp.src(sourcePaths.coffee)
     .pipe(coffee({bare: true})
       .on('error', gutil.log))
+    .pipe(gulp.dest('www/_dev/js/'))
+    ;
+});
+
+gulp.task('js', function() {
+  gulp.src(sourcePaths.js)
+    .pipe(concat('app.js'))
+    // .pipe(browserify())
+    // .pipe(gulpif(env === 'production', uglify()))
+    // .pipe(uglify())
     .pipe(gulp.dest('www/js/'))
+    ;
+});
+
+gulp.task('stylus', function() {
+  gulp.src(sourcePaths.stylus)
+    .pipe(stylus({errors: true}))
+    .pipe(gulp.dest('www/css/'))
     ;
 });
 
@@ -54,13 +88,15 @@ gulp.task('jade', function() {
     .pipe(gulp.dest('www/templates/'))
 });
 
-gulp.task('default', ['sass', 'js', 'coffee', 'jade', 'watch']);
+gulp.task('default', ['sass', 'stylus', 'coffee', 'js', 'jade', 'watch']);
 
 gulp.task('watch', function() {
   // Second: task name 'sass, js, ...'
   var server = livereload();
   gulp.watch(sourcePaths.sass, ['sass']);
-  gulp.watch(sourcePaths.coffee, ['coffee']);
+  gulp.watch(sourcePaths.sass, ['stylus']);
+  // gulp.watch(sourcePaths.coffee, ['coffee']);
+  gulp.watch(sourcePaths.js, ['js']);
   gulp.watch(sourcePaths.html, function(e){
     server.changed(e.path);
   });
